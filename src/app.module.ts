@@ -7,6 +7,7 @@ import { UserModule } from './user/user.module';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { GlobalExceptionFilter } from './utils/filter/exception.filter';
 import { ResponseInterceptor } from './utils/interceptors/responseTransform.interceptor';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ResponseInterceptor } from './utils/interceptors/responseTransform.inte
     }),
     PrismaModule,
     UserModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [

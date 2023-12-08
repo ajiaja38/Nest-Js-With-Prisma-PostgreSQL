@@ -7,6 +7,7 @@ import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from './dto/CreateUser.dto';
 import { v4 as uuidv4 } from 'uuid';
+import * as bcrypt from 'bcrypt';
 import { UpdateUserDto } from './dto/UpdateUser.dto';
 
 @Injectable()
@@ -14,6 +15,8 @@ export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createUser(payload: CreateUserDto): Promise<User> {
+    const { email, name, password } = payload;
+
     const now = new Date();
     now.setHours(now.getHours() + 7);
     const createdAt = now.toISOString();
@@ -21,7 +24,9 @@ export class UserService {
     const result = await this.prisma.user.create({
       data: {
         id: `User-${uuidv4()}`,
-        ...payload,
+        email,
+        name,
+        password: await bcrypt.hash(password, 12),
         createdAt,
         updatedAt,
       },
@@ -34,8 +39,32 @@ export class UserService {
     return result;
   }
 
-  async getAllUsers(): Promise<User[] | []> {
-    return await this.prisma.user.findMany();
+  async getAllUsers(search: string, page: number, limit: number): Promise<any> {
+    let where: any = {};
+
+    if (search) {
+      where = {
+        OR: [
+          { email: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search, mode: 'insensitive' } },
+        ],
+      };
+    }
+
+    const totalData = await this.prisma.user.count({ where });
+    const totalPage = Math.ceil(totalData / limit);
+    const data = await this.prisma.user.findMany({
+      where,
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return {
+      totalData,
+      totalPage,
+      page,
+      data,
+    };
   }
 
   async getUserById(id: string): Promise<any> {

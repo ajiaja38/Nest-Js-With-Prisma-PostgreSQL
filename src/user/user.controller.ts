@@ -4,8 +4,10 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from '@prisma/client';
@@ -22,8 +24,12 @@ export class UserController {
   }
 
   @Get()
-  async getAllUsersHandler(): Promise<User[] | []> {
-    return await this.userService.getAllUsers();
+  async getAllUsersHandler(
+    @Query('search') search: string,
+    @Query('page', ParseIntPipe) page: number,
+    @Query('limit', ParseIntPipe) limit: number,
+  ): Promise<User[] | []> {
+    return await this.userService.getAllUsers(search, page, limit);
   }
 
   @Get(':id')
