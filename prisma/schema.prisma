@@ -11,9 +11,10 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   name      String
-  password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  password  String
+  Auth      Auth[]
   post      Post[]
 }
 
@@ -22,8 +23,16 @@ model Post {
   title     String
   content   String?
   published Boolean? @default(false)
+  authorId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   author    User     @relation(fields: [authorId], references: [id])
-  authorId  String
+}
+
+model Auth {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  expires   DateTime
+  createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id])
 }

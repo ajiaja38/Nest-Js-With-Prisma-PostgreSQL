@@ -9,6 +9,8 @@ import { CreateUserDto } from './dto/CreateUser.dto';
 import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcrypt';
 import { UpdateUserDto } from './dto/UpdateUser.dto';
+import { LoginDto } from './dto/Login.dto';
+import { JwtPayloadInterface } from 'src/auth/interface';
 
 @Injectable()
 export class UserService {
@@ -109,5 +111,30 @@ export class UserService {
     if (!result) {
       throw new NotFoundException('User tidak ditemukan!');
     }
+  }
+
+  async validateCredentials(payload: LoginDto): Promise<JwtPayloadInterface> {
+    const { email, password } = payload;
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Email atau password salah!');
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      throw new NotFoundException('Email atau password salah!');
+    }
+
+    return {
+      id: user.id,
+      name: user.name,
+    };
   }
 }
