@@ -30,9 +30,10 @@ model Post {
 }
 
 model Auth {
-  id        Int      @id @default(autoincrement())
-  userId    String
-  expires   DateTime
-  createdAt DateTime @default(now())
-  User      User     @relation(fields: [userId], references: [id])
+  id           Int      @id @default(autoincrement())
+  userId       String
+  refreshToken String   @unique
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  User         User     @relation(fields: [userId], references: [id])
 }

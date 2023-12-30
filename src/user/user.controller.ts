@@ -8,11 +8,13 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from '@prisma/client';
 import { CreateUserDto } from './dto/CreateUser.dto';
 import { UpdateUserDto } from './dto/UpdateUser.dto';
+import { JwtAuthGuard } from 'src/utils/guard/JwtAuth.guard';
 
 @Controller('user')
 export class UserController {
@@ -24,6 +26,7 @@ export class UserController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   async getAllUsersHandler(
     @Query('search') search: string,
     @Query('page', ParseIntPipe) page: number,

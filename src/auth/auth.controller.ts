@@ -1,18 +1,18 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { UserService } from 'src/user/user.service';
 import { LoginDto } from 'src/user/dto/Login.dto';
-import { JwtPayloadInterface } from './interface';
+
+export type token = {
+  accessToken: string;
+  refreshToken: string;
+};
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly userService: UserService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('login')
-  async loginHandler(@Body() payload: LoginDto): Promise<JwtPayloadInterface> {
-    return await this.userService.validateCredentials(payload);
+  async loginHandler(@Body() loginDto: LoginDto): Promise<token> {
+    return await this.authService.generateToken(loginDto);
   }
 }
