@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from 'src/user/dto/Login.dto';
 import { UserService } from 'src/user/user.service';
@@ -17,8 +17,8 @@ export class AuthService {
 
   async generateToken(loginDto: LoginDto): Promise<token> {
     const user = await this.userService.validateCredentials(loginDto);
-    const accessToken = await this.generateAccessToken(user);
-    const refreshToken = await this.generateRefreshToken(user);
+    const accessToken: string = await this.generateAccessToken(user);
+    const refreshToken: string = await this.generateRefreshToken(user);
 
     return {
       accessToken,
@@ -61,5 +61,29 @@ export class AuthService {
     });
 
     return refreshToken;
+  }
+
+  async refreshAccessToken(refreshToken: string): Promise<any> {
+    const user = await this.prismaService.auth.findUnique({
+      where: {
+        refreshToken,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException(
+        'Refresh Token Tidak Valid, silahkan login ulang',
+      );
+    }
+
+    const payload = this.jwtService.verify(refreshToken, {
+      secret: jwtConstant.refreshTokenSecret,
+    });
+
+    const accessToken: string = await this.generateAccessToken(payload);
+
+    return {
+      accessToken,
+    };
   }
 }
