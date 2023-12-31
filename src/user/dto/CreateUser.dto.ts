@@ -23,4 +23,7 @@ export class CreateUserDto {
       'Password terlalu lemah, Wajib Kombinasi A-z & Karakter (!@#$%^&*-)',
   })
   password: string;
+
+  @IsNotEmpty()
+  roles: string[];
 }

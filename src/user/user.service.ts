@@ -17,20 +17,28 @@ export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createUser(payload: CreateUserDto): Promise<User> {
-    const { email, name, password } = payload;
+    const { email, name, password, roles } = payload;
 
+    const userId = `User-${uuidv4()}`;
     const now = new Date();
     now.setHours(now.getHours() + 7);
     const createdAt = now.toISOString();
     const updatedAt = createdAt;
     const result = await this.prisma.user.create({
       data: {
-        id: `User-${uuidv4()}`,
+        id: userId,
         email,
         name,
         password: await bcrypt.hash(password, 12),
         createdAt,
         updatedAt,
+        roles: {
+          create: roles.map((roleId) => ({
+            role: {
+              connect: { id: roleId },
+            },
+          })),
+        },
       },
     });
 
@@ -57,6 +65,14 @@ export class UserService {
     const totalPage = Math.ceil(totalData / limit);
     const data = await this.prisma.user.findMany({
       where,
+      include: {
+        roles: {
+          select: {
+            role: true,
+          },
+        },
+        post: true,
+      },
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -70,12 +86,31 @@ export class UserService {
   }
 
   async getUserById(id: string): Promise<any> {
-    const result = await this.prisma.user.findUnique({
-      where: { id },
-      include: {
-        post: true,
-      },
-    });
+    const result = await this.prisma.$queryRaw`
+    SELECT
+      "User"."id",
+      "User"."email",
+      "User"."name",
+      "User"."createdAt",
+      "User"."updatedAt",
+      jsonb_agg(jsonb_build_object('name', "Role"."name")) as "roles",
+      CASE
+        WHEN COUNT("Post"."id") > 0 THEN jsonb_agg(jsonb_build_object('title', "Post"."title", 'content', "Post"."content", 'createdAt', "Post"."createdAt", 'updatedAt', "Post"."updatedAt"))
+        ELSE '[]'::jsonb
+      END as "posts"
+    FROM
+      "User"
+    LEFT JOIN
+      "RoleUser" ON "User"."id" = "RoleUser"."userId"
+    LEFT JOIN
+      "Role" ON "RoleUser"."roleId" = "Role"."id"
+    LEFT JOIN
+      "Post" ON "User"."id" = "Post"."authorId"
+    WHERE
+      "User"."id" = ${id}
+    GROUP BY
+      "User"."id";
+  `;
 
     if (!result) {
       throw new NotFoundException('User tidak ditemukan!');
